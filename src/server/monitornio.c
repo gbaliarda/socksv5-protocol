@@ -248,7 +248,6 @@ monitor_read(struct selector_key *key) {
 static void
 monitor_process(struct selector_key *key, struct monitor_st *d) {
     uint8_t *data = NULL;
-    // uint32_t *data = malloc(sizeof(uint32_t));
     uint16_t dlen = 1;
     bool numeric_data = false;
     int error_response = 0;
@@ -264,8 +263,7 @@ monitor_process(struct selector_key *key, struct monitor_st *d) {
                 case monitor_target_get_concurrent: {
                     uint32_t cc = socksv5_current_connections();
                     dlen = sizeof(cc);
-                    data = malloc(dlen);
-                    *((uint32_t*)data) = cc;
+                    data = (uint8_t *) &cc;
                     numeric_data = true;
                     d->status = monitor_status_succeeded;
                     break;
@@ -273,8 +271,7 @@ monitor_process(struct selector_key *key, struct monitor_st *d) {
                 case monitor_target_get_historic: {
                     uint32_t hc = socksv5_historic_connections();
                     dlen = sizeof(hc);
-                    data = malloc(dlen);
-                    *((uint32_t*)data) = hc;
+                    data = (uint8_t *) &hc;
                     numeric_data = true;
                     d->status = monitor_status_succeeded;
                     break;
@@ -282,8 +279,7 @@ monitor_process(struct selector_key *key, struct monitor_st *d) {
                 case monitor_target_get_transfered: {
                     uint32_t bt = socksv5_bytes_transferred();
                     dlen = sizeof(bt);
-                    data = malloc(dlen);
-                    *((uint32_t*)data) = bt;
+                    data = (uint8_t *) &bt;
                     numeric_data = true;
                     d->status = monitor_status_succeeded;
                     break;
@@ -291,16 +287,14 @@ monitor_process(struct selector_key *key, struct monitor_st *d) {
                 case monitor_target_get_proxyusers: {
                     char usernames[MAX_USERS * 0xff];
                     dlen = socksv5_get_users(usernames);
-                    data = malloc(dlen);
-                    memcpy(data, usernames, dlen);
+                    data = (uint8_t *) usernames;
                     d->status = monitor_status_succeeded;
                     break;
                 }
                 case monitor_target_get_adminusers: {
-                    char usernames[MAX_USERS * 0xff];
+                    char usernames[MAX_ADMINS * 0xff];
                     dlen = monitor_get_admins(usernames);
-                    data = malloc(dlen);
-                    memcpy(data, usernames, dlen);
+                    data = (uint8_t *) usernames;
                     d->status = monitor_status_succeeded;
                     break;
                 }
@@ -356,8 +350,6 @@ finally:
 
     if (-1 == monitor_marshall(d->wb, d->status, dlen, data, numeric_data))
         abort(); // el buffer tiene que ser mas grande en la variable
-
-    free(data);
 }
 
 static void
